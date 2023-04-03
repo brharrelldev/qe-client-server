@@ -1,13 +1,13 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/brharrelldev/qe-client-server/pkg/types"
 	"github.com/satori/go.uuid"
 	"github.com/urfave/cli/v2"
+	"io"
 	"log"
 	"net"
 	"os"
@@ -19,8 +19,9 @@ func main() {
 	app.Name = "qe-client"
 	app.Flags = []cli.Flag{
 		&cli.StringFlag{
-			Name:    "action",
-			Aliases: []string{"a"},
+			Name:     "action",
+			Aliases:  []string{"a"},
+			Required: true,
 		},
 		&cli.StringFlag{
 			Name: "path",
@@ -37,48 +38,54 @@ func main() {
 
 func sendRequest(c *cli.Context) error {
 
-	buf := make([]byte, 1024)
-
 	conn, err := net.Dial("tcp", ":3000")
 	if err != nil {
 		return fmt.Errorf("error dialing server %v", err)
 	}
 
-	var inventoryData *types.Data
-	switch c.String("action") {
-	case "get":
+	defer conn.Close()
 
+	switch c.String("action") {
+	case "list":
+
+		req := types.Payload{
+			Method: "list",
+		}
+
+		msg, err := json.Marshal(req)
+		if err != nil {
+			return fmt.Errorf("error serializing request %v", err)
+		}
+
+		fmt.Println("list request sent to server")
+
+		if _, err := conn.Write(msg); err != nil {
+			return fmt.Errorf("error sending request to server %v", err)
+		}
+
+		output, err := io.ReadAll(conn)
+		if err != nil {
+			return fmt.Errorf("error reading data from server %v", err)
+		}
+
+		fmt.Println(string(output))
+
+	case "create":
 		if c.String("path") == "" {
 			return errors.New("path is required for get request")
 		}
 
-		f, err := os.Open(c.String("path"))
+		inventoryData, err := fileToJson(c.String("path"))
 		if err != nil {
-			return fmt.Errorf("error opening up file %v", err)
+			return fmt.Errorf("error getting inventorty data from file %v", err)
 		}
 
-		defer f.Close()
-
-		offset, err := f.Read(buf)
-		if err != nil {
-			return fmt.Errorf("error reading file %v", err)
-		}
-
-		data := buf[:offset]
-
-		if err := json.NewDecoder(bytes.NewBuffer(data)).Decode(&inventoryData); err != nil {
-			return fmt.Errorf("error decoding input data %v", err)
-		}
-
-		if inventoryData == nil {
-			return errors.New("input not serialized correctly")
-		}
-
-		reqId := uuid.NewV4()
+		fmt.Printf("%v\n", inventoryData)
+		iID := uuid.NewV4()
 		req := types.Payload{
-			RequestID: reqId.String(),
-			Method:    "get",
-			Data:      inventoryData,
+			Id:     iID.String(),
+			Method: "create",
+			Data:   inventoryData,
 		}
 
 		msg, err := json.Marshal(req)
@@ -90,8 +97,12 @@ func sendRequest(c *cli.Context) error {
 			return fmt.Errorf("error sending data to server %v", err)
 		}
 
-	case "create":
-		return errors.New("not implemented")
+		output, err := io.ReadAll(conn)
+		if err != nil {
+			return fmt.Errorf("erro reading connection %v", err)
+		}
+
+		fmt.Println(string(output))
 
 	case "update":
 		return errors.New("not implemented")

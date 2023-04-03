@@ -1,9 +1,9 @@
 
 
 build-server:
-	go build -o bin/qe-server server/main.go
+	go build -o bin/qe-server server/*.go
 
 build-client:
-	go build -o bin/qe-client client/main.go
+	go build -o bin/qe-client client/*.go
 
 all: build-server build-client
