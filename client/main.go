@@ -1,16 +1,19 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/brharrelldev/qe-client-server/pkg/types"
+	"github.com/olekukonko/tablewriter"
 	"github.com/satori/go.uuid"
 	"github.com/urfave/cli/v2"
 	"io"
 	"log"
 	"net"
 	"os"
+	"strconv"
 )
 
 func main() {
@@ -68,7 +71,28 @@ func sendRequest(c *cli.Context) error {
 			return fmt.Errorf("error reading data from server %v", err)
 		}
 
-		fmt.Println(string(output))
+		var resp *types.Response
+
+		if err := json.NewDecoder(bytes.NewBuffer(output)).Decode(&resp); err != nil {
+			return fmt.Errorf("error decoding response %v", err)
+		}
+
+		var table [][]string
+
+		for _, items := range resp.Results {
+
+			table = append(table, []string{items.Id, items.Data.Name, strconv.Itoa(items.Data.Quantity), strconv.Itoa(items.Data.PartNumber)})
+		}
+
+		tableWriter := tablewriter.NewWriter(os.Stdout)
+
+		tableWriter.SetHeader([]string{"ID", "Name", "Quantity", "Part No."})
+
+		for _, d := range table {
+			tableWriter.Append(d)
+		}
+
+		tableWriter.Render()
 
 	case "create":
 		if c.String("path") == "" {

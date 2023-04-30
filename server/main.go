@@ -17,11 +17,6 @@ import (
 
 type Method string
 
-type Response struct {
-	Message string
-	Results []types.Payload
-}
-
 func responseHandler(conn net.Conn, errChan chan error, dataChan chan []byte) {
 
 	buf := make([]byte, 1024)
@@ -36,7 +31,7 @@ func responseHandler(conn net.Conn, errChan chan error, dataChan chan []byte) {
 
 }
 
-func actionDecider(db *DB, data []byte, resultChan chan *Response, errChan chan error) {
+func actionDecider(db *DB, data []byte, resultChan chan *types.Response, errChan chan error) {
 
 	var payload *types.Payload
 
@@ -137,7 +132,7 @@ func StartServer(qeLogger *zap.Logger, port string) error {
 		select {
 		case data := <-dataChan:
 
-			resultChan := make(chan *Response)
+			resultChan := make(chan *types.Response)
 			go actionDecider(db, data, resultChan, errChan)
 
 			select {

@@ -25,7 +25,7 @@ func NewDB() (*DB, error) {
 
 }
 
-func (db *DB) Create(data *bufio.Reader) (*Response, error) {
+func (db *DB) Create(data *bufio.Reader) (*types.Response, error) {
 
 	buf := make([]byte, 1024)
 
@@ -57,12 +57,12 @@ func (db *DB) Create(data *bufio.Reader) (*Response, error) {
 
 	fmt.Println("new record successfully created!")
 
-	return &Response{
+	return &types.Response{
 		Message: fmt.Sprintf("%s successfull created", id),
 	}, nil
 }
 
-func (db *DB) List() (*Response, error) {
+func (db *DB) List() (*types.Response, error) {
 
 	fmt.Println("testing")
 	var dataList []types.Payload
@@ -114,7 +114,7 @@ func (db *DB) List() (*Response, error) {
 
 	}
 
-	resp := &Response{
+	resp := &types.Response{
 		Message: "list request successful",
 		Results: dataList,
 	}
@@ -123,7 +123,7 @@ func (db *DB) List() (*Response, error) {
 
 }
 
-func (db *DB) Update(id string, data *types.Data) (*Response, error) {
+func (db *DB) Update(id string, data *types.Data) (*types.Response, error) {
 
 	if err := db.db.Update(func(txn *badger.Txn) error {
 
@@ -144,7 +144,7 @@ func (db *DB) Update(id string, data *types.Data) (*Response, error) {
 
 	}
 
-	return &Response{
+	return &types.Response{
 		Message: "update successful",
 	}, nil
 

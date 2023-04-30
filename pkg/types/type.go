@@ -11,3 +11,8 @@ type Data struct {
 	PartNumber int    `json:"partNumber"`
 	Quantity   int    `json:"quantity"`
 }
+
+type Response struct {
+	Message string
+	Results []Payload
+}
